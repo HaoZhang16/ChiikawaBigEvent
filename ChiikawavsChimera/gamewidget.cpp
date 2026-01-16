@@ -163,6 +163,8 @@ void GameWidget::Init_Game()
     QCursor cursor(QPixmap(":/icons/img/cursor.png"));
     QApplication::setOverrideCursor(cursor);
 
+    //GameWidget 直接安装事件过滤器到 mGameView 的 viewport
+    mGameView.viewport()->installEventFilter(this);
 
     //游戏背景音乐
 
@@ -732,10 +734,34 @@ void GameWidget::keyReleaseEvent(QKeyEvent *event)
 void GameWidget::mousePressEvent(QMouseEvent *event)
 {
 
-    if(!isRunning) return;
+    if(!isRunning) {
+        qDebug() << "mousePressEvent: isRunning is false, returning";
+        return;
+    }
+    qDebug() << "mousePressEvent: triggered, isPressed set to true";
     isPressed = 1;
-    //qDebug()<<"hello";
-    playerShootTimer->start(mPlayer.getAttackInterval());
+
+    QPointF moveDir = event->pos() - mPlayer.getCenterPos();
+    qreal _x = moveDir.x();
+    qreal _y = moveDir.y();
+    _x = QString::number(_x,'f',2).toDouble();
+    _y = QString::number(_y,'f',2).toDouble();
+    qreal _r = qSqrt(qPow(_x,2) + qPow(_y,2));
+    if(_r == 0) _r = 1;
+    _r = QString::number(_r,'f',2).toDouble();
+    qreal dx = _x/_r;
+    qreal dy = _y/_r;
+    dx = QString::number(dx,'f',2).toDouble();
+    dy = QString::number(dy,'f',2).toDouble();
+    playerBulletDir = QPointF(dx,dy);
+    qDebug() << "mousePressEvent: playerBulletDir =" << playerBulletDir;
+
+    qDebug() << "mousePressEvent: starting timer, interval =" << mPlayer.getAttackInterval();
+    if (!playerShootTimer->isActive()) {
+        playerShootTimer->start(mPlayer.getAttackInterval());
+    }
+    //立即发射第一颗子弹
+    mPlayer.playerShoot(playerBulletDir);
 
 
     QWidget::mousePressEvent(event);
@@ -775,6 +801,24 @@ void GameWidget::mouseReleaseEvent(QMouseEvent *event)
     isPressed = 0;
     playerShootTimer->stop();
     QWidget::mouseReleaseEvent(event);
+}
+
+bool GameWidget::eventFilter(QObject *obj, QEvent *event)
+{
+    if (event->type() == QEvent::MouseButtonPress) {
+        auto *me = static_cast<QMouseEvent*>(event);
+        mousePressEvent(me);
+        return true;
+    } else if (event->type() == QEvent::MouseButtonRelease) {
+        auto *me = static_cast<QMouseEvent*>(event);
+        mouseReleaseEvent(me);
+        return true;
+    } else if (event->type() == QEvent::MouseMove) {
+        auto *me = static_cast<QMouseEvent*>(event);
+        mouseMoveEvent(me);
+        return true;
+    }
+    return QWidget::eventFilter(obj, event);
 }
 
 void GameWidget::enemySummon(int _HP, int _Attack, qreal _Speed, int _exp, int _No)

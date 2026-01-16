@@ -112,8 +112,11 @@ public:
     QList<EnemyBase*> mEnemyList;//怪物列表
     QList<ExpBall*> mExpBallList;//经验球列表
 
-signals:
-    void isSelected();//完成选择
+    signals:
+        void isSelected();//完成选择
+
+public:
+    bool eventFilter(QObject *obj, QEvent *event) override;
 
 private:
     Ui::GameWidget *ui;

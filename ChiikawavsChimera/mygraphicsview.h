@@ -3,19 +3,17 @@
 
 #include<QGraphicsView>
 #include<QMouseEvent>
+#include<QEvent>
 
 class myGraphicsView : public QGraphicsView
 {
     Q_OBJECT
 public:
     explicit myGraphicsView();
-
-    void mousePressEvent(QMouseEvent *event);
-    void mouseMoveEvent(QMouseEvent *event);
-    void mouseReleaseEvent(QMouseEvent *event);
+    bool eventFilter(QObject *obj, QEvent *event) override;
 
 
-signals:
+ signals:
 };
 
 #endif // MYGRAPHICSVIEW_H
